@@ -11,11 +11,15 @@ def colorize(value):
     if value_clean == "pass":
         return f"\033[92m{value}\033[0m"  # Green
     elif value_clean == "none":
-        return f"\033[93m{value}\033[0m"  # Yellow
+        return f"\033[93m{value}\033[0m"  # Yellow (normal none)
     elif value_clean == "fail":
         return f"\033[91m{value}\033[0m"  # Red
     elif value_clean == "none-temp":
         return f"\033[96mnone (override)\033[0m"  # Cyan for RFC 6.6.2 override
+    elif value_clean == "quarantine":
+        return f"\033[38;5;208m{value}\033[0m" # Orange
+    elif value_clean == "reject":
+        return f"\033[91m{value}\033[0m" # Red
     return value
 
 def domains_align_relaxed(auth_domain, header_from):
@@ -72,7 +76,7 @@ def parse_dmarc_report(xml_file):
                 'Reporter': org_name,
                 'Source IP': record.findtext('./row/source_ip'),
                 'Count': record.findtext('./row/count'),
-                'Disposition': record.findtext('./row/policy_evaluated/disposition'),
+                'Disposition': colorize(record.findtext('./row/policy_evaluated/disposition') or ''),
                 'Header From': header_from,
                 'SPF Domain': '',
                 'SPF': '',
@@ -161,7 +165,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
