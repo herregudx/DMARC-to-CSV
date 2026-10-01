@@ -8,7 +8,7 @@ from datetime import datetime
 def colorize(value):
     value_clean = value.lower()
 
-    if value_clean == "pass":
+    if all(part.strip() == "pass" for part in value_clean.split(",")):
         return f"\033[92m{value}\033[0m"  # Green
     elif value_clean == "none":
         return f"\033[93m{value}\033[0m"  # Yellow (normal none)
@@ -29,34 +29,43 @@ def domains_align_relaxed(auth_domain, header_from):
             header_from.endswith("." + auth_domain) or
             auth_domain.endswith("." + header_from))
 
-def evaluate_dmarc_relaxed(spf_domain, spf_result, dkim_domain, dkim_result, header_from):
-    spf_result_clean = strip_ansi(spf_result).lower()
-    dkim_result_clean = strip_ansi(dkim_result).lower()
+def evaluate_dmarc_relaxed(spf_results, dkim_results, header_from):
+    # SPF
+    for domain, result in spf_results:
+        if result.lower() == "pass" and domains_align_relaxed(domain, header_from):
+            return "pass"
 
-    spf_aligned = spf_result_clean == "pass" and domains_align_relaxed(spf_domain, header_from)
-    dkim_aligned = dkim_result_clean == "pass" and domains_align_relaxed(dkim_domain, header_from)
+    # DKIM
+    for domain, result in dkim_results:
+        if result.lower() == "pass" and domains_align_relaxed(domain, header_from):
+            return "pass"
 
-    if spf_aligned or dkim_aligned:
-        return "pass"
+    # Temporary errors
+    all_results = [result.lower() for _, result in spf_results + dkim_results]
 
-    # RFC 7489 §6.6.2 handling for temporary errors
-    if spf_result_clean == "temperror" or dkim_result_clean == "temperror":
+    if "temperror" in all_results:
         return "none-temp"
 
     return "fail"
 
-def evaluate_dmarc_strict(spf_domain, spf_result, dkim_domain, dkim_result, header_from):
-    spf_result_clean = strip_ansi(spf_result).lower()
-    dkim_result_clean = strip_ansi(dkim_result).lower()
 
-    spf_aligned = spf_result_clean == "pass" and spf_domain.lower() == header_from.lower()
-    dkim_aligned = dkim_result_clean == "pass" and dkim_domain.lower() == header_from.lower()
+def evaluate_dmarc_strict(spf_results, dkim_results, header_from):
+    header_from_clean = header_from.lower()
 
-    if spf_aligned or dkim_aligned:
-        return "pass"
+    # SPF
+    for domain, result in spf_results:
+        if result.lower() == "pass" and domain.lower() == header_from_clean:
+            return "pass"
 
-    # RFC 7489 §6.6.2 handling for temporary errors
-    if spf_result_clean == "temperror" or dkim_result_clean == "temperror":
+    # DKIM
+    for domain, result in dkim_results:
+        if result.lower() == "pass" and domain.lower() == header_from_clean:
+            return "pass"
+
+    # Temporary errors
+    all_results = [result.lower() for _, result in spf_results + dkim_results]
+
+    if "temperror" in all_results:
         return "none-temp"
 
     return "fail"
@@ -85,34 +94,61 @@ def parse_dmarc_report(xml_file):
             }
 
             # SPF auth results
-            spf = record.find('./auth_results/spf')
-            if spf is not None:
-                row_data['SPF Domain'] = spf.findtext('domain') or ''
-                row_data['SPF'] = colorize(spf.findtext('result') or '')
+            spf_results = []
+
+            for spf in record.findall('./auth_results/spf'):
+                domain = spf.findtext('domain') or ''
+                result = spf.findtext('result') or ''
+
+                spf_results.append((domain, result))
+
+            row_data['SPF Domain'] = ', '.join(
+                domain for domain, _ in spf_results
+            )
+
+            row_data['SPF'] = colorize(', '.join(
+                result for _, result in spf_results
+            )) if spf_results else ''
+
 
             # DKIM auth results
-            dkim = record.find('./auth_results/dkim')
-            if dkim is not None:
-                row_data['DKIM Domain'] = dkim.findtext('domain') or ''
-                row_data['DKIM'] = colorize(dkim.findtext('result') or 'clear')
-            else:
-                row_data['DKIM'] = colorize('none')
+            dkim_results = []
+
+            for dkim in record.findall('./auth_results/dkim'):
+                domain = dkim.findtext('domain') or ''
+                result = dkim.findtext('result') or ''
+
+                dkim_results.append((domain, result))
+
+            row_data['DKIM Domain'] = ', '.join(
+                domain for domain, _ in dkim_results
+            )
+
+            row_data['DKIM'] = colorize(', '.join(
+                result for _, result in dkim_results
+            )) if dkim_results else 'none'
+
 
             # DMARC relaxed
             dmarc_relaxed_result_plain = evaluate_dmarc_relaxed(
-                row_data['SPF Domain'], row_data['SPF'],
-                row_data['DKIM Domain'], row_data['DKIM'],
+                spf_results,
+                dkim_results,
                 header_from
             )
+
             row_data['DMARC Relaxed'] = colorize(dmarc_relaxed_result_plain)
+
 
             # DMARC strict
             dmarc_strict_result_plain = evaluate_dmarc_strict(
-                row_data['SPF Domain'], row_data['SPF'],
-                row_data['DKIM Domain'], row_data['DKIM'],
+                spf_results,
+                dkim_results,
                 header_from
             )
-            row_data['DMARC Strict'] = colorize(dmarc_strict_result_plain)
+
+            row_data['DMARC Strict'] = colorize(
+                dmarc_strict_result_plain
+            )
 
             report_rows.append(row_data)
 
