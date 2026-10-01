@@ -7,20 +7,33 @@ DMARC results are shown as pass or fail, and the terminal output is colored to m
 
 Example terminal output (without coloring):
 ```
-+--------------------+--------------------------+---------+---------------+-----------------+------------------------------------+-----------+---------------------------+--------+-----------------+-----------------+
-| Reporter           | Source IP                |   Count | Disposition   | Header From     | SPF Domain                         | SPF       | DKIM Domain               | DKIM   | DMARC Relaxed   | DMARC Strict    |
-+====================+==========================+=========+===============+=================+====================================+===========+===========================+========+=================+=================+
-| AMAZON-SES         | 198.168.1.217            |       1 | none          | yourdomain.com  | yourdomain.com                     | pass      |                           | none   | pass            | pass            |
-+--------------------+--------------------------+---------+---------------+-----------------+------------------------------------+-----------+---------------------------+--------+-----------------+-----------------+
-| AMAZON-SES         | 123.145.67.189           |       1 | none          | yourdomain.com  | yourdomain.com                     | pass      | yourdomain.com            | pass   | pass            | pass            |
-+--------------------+--------------------------+---------+---------------+-----------------+------------------------------------+-----------+---------------------------+--------+-----------------+-----------------+
-| AMAZON-SES         | 149.23.45.67             |       1 | none          | yourdomain.com  | sub.yourdomain.com                 | softfail  |                           | none   | fail            | fail            |
-+--------------------+--------------------------+---------+---------------+-----------------+------------------------------------+-----------+---------------------------+--------+-----------------+-----------------+
-| Enterprise Outlook | 2b06:1846:cc70:8600::116 |       1 | none          | yourdomain.com  | yourdomain.com                     | temperror |                           | none   | none (override) | none (override) |
-+--------------------+--------------------------+---------+---------------+-----------------+------------------------------------+-----------+---------------------------+--------+-----------------+-----------------+
-| Enterprise Outlook | 165.123.45.62            |       1 | none          | yourdomain.com  | anotherdomain.com                  | pass      |                           | none   | fail            | fail            |
-+--------------------+--------------------------+---------+---------------+-----------------+------------------------------------+-----------+---------------------------+--------+-----------------+-----------------+
++---------------+-----------------+---------+---------------+--------------------+------------------+---------------+------------------+-------+-----------------+--------+-----------------+----------------+
+| Reporter      | Source IP       |   Count | Disposition   | Header From        | Envelope From    | Envelope To   | SPF Domain       | SPF   | DKIM Domain     | DKIM   | DMARC Relaxed   | DMARC Strict   |
++===============+=================+=========+===============+====================+==================+===============+==================+=======+=================+========+=================+================+
+| AMAZON-SES    | 234.123.4.156   |       1 | none          | yourdomain.com     |  yourdomain.com  |               | yourdomain.com   | pass  | yourdomain.com  | pass   | pass            | pass           |
++---------------+-----------------+---------+---------------+--------------------+------------------+---------------+------------------+-------+-----------------+--------+-----------------+----------------+
+| AMAZON-SES    | 123.145.67.189  |       1 | none          | yourdomain.com     |  yourdomain.com  |               | yourdomain.com   | pass  | yourdomain.com  | pass   | pass            | pass           |
++---------------+-----------------+---------+---------------+--------------------+------------------+---------------+------------------+-------+-----------------+--------+-----------------+----------------+
+| Outlook.com   | 185.123.45.62   |       1 | none          | yourdomain.com     |  yourdomain.com  | hotmail.com   | yourdomain.com   | pass  | yourdomain.com  | pass   | pass            | pass           |
++---------------+-----------------+---------+---------------+--------------------+------------------+---------------+------------------+-------+-----------------+--------+-----------------+----------------+
 ```
+
+### Short explanation of the columns:
+
+- Reporter: Organization that generated the DMARC report.
+- Source IP: IP address of the server that sent the email.
+- Count: Number of emails represented by the record.
+- Disposition: Action taken by the receiving server (none, quarantine, or reject).
+- Header From: Domain shown in the visible From address.
+- Envelope From: Domain used as the SMTP envelope sender (Return-Path).
+- Envelope To: Recipient domain from the SMTP envelope (may not be included by all reporters).
+- SPF Domain: Domain that was evaluated by SPF.
+- SPF: SPF authentication result.
+- DKIM Domain: Domain used in the DKIM signature (multiple domains may be shown).
+- DKIM: DKIM authentication result.
+- DMARC Relaxed: Calculated DMARC result using relaxed domain alignment.
+- DMARC Strict: Calculated DMARC result using strict domain alignment.
+
 
 ### Note: 
 The script will read all XML-files located in ./dmarc_reports. If you put DMARC-report zipped files in /dmarc_reports you can run unzip-reports.py to extract them all at once to the same folder.
