@@ -81,12 +81,17 @@ def parse_dmarc_report(xml_file):
 
         for record in root.findall('.//record'):
             header_from = record.findtext('./identifiers/header_from') or ""
+            envelope_from = record.findtext('./identifiers/envelope_from') or ""
+            envelope_to = record.findtext('./identifiers/envelope_to') or ""
+
             row_data = {
                 'Reporter': org_name,
                 'Source IP': record.findtext('./row/source_ip'),
                 'Count': record.findtext('./row/count'),
                 'Disposition': colorize(record.findtext('./row/policy_evaluated/disposition') or ''),
                 'Header From': header_from,
+                'Envelope From': envelope_from,
+                'Envelope To': envelope_to,
                 'SPF Domain': '',
                 'SPF': '',
                 'DKIM Domain': '',
