@@ -1,7 +1,7 @@
 # DMARC-to-CSV
 A DMARC parser. Converts DMARC RUA XML-files to an reasy readable table and export the results to a timestamped CSV-file. The report displays the following columns:
 
-**Reporter, Source IP, Count, Disposition, Header From, SPF Domain, SPF, DKIM Domain, DKIM, DMARC Relaxed and DMARC Strict**.
+**Reporter, Source IP, Count, Disposition, Header From, Envelope From, Envelope To, SPF Domain, SPF, DKIM Domain, DKIM, DMARC Relaxed and DMARC Strict**.
 
 DMARC results are shown as pass or fail, and the terminal output is colored to make it easier to read. If either SPF or DKIM result is "temperror" the DMARC results will show "none (override)" to indicate that DMARC policy would not be enforced (as specified by RFC 7489 - 6.6.2).
 
