@@ -27,7 +27,7 @@ Example terminal output (without coloring):
 - Reporter: Organization that generated the DMARC report.
 - Source IP: IP address of the server that sent the email.
 - Count: Number of emails represented by the record.
-- Disposition: Action taken by the receiving server (none, quarantine, or reject).
+- Disposition: Action taken by the receiving server (none, quarantine or reject).
 - Header From: Domain shown in the visible From address.
 - Envelope From: Domain used as the SMTP envelope sender (Return-Path).
 - Envelope To: Recipient domain from the SMTP envelope (may not be included by all reporters).
